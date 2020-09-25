@@ -18,4 +18,9 @@ jobs:
     - name: install dependencies
       run: sudo apt install -y build-essential gcc-multilib flex bison libncurses5-dev pkg-config libglade2-dev libssl-dev libelf-dev
     - name: make
-      run: make
+      run: make -j$(nproc)
+    - name : Upload artifact
+      uses: actions/upload-artifact@master
+      with:
+        name: linux-kernel-bzImage
+        path: arch/x86/boot/bzImage
