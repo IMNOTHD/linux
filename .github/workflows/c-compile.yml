@@ -15,5 +15,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: make defconfig
       run: make defconfig
+    - name: install dependencies
+      run: sudo apt install -y build-essential gcc-multilib flex bison libncurses5-dev pkg-config libglade2-dev libssl-dev libelf-dev
     - name: make
       run: make
