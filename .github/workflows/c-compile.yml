@@ -22,5 +22,5 @@ jobs:
     - name : Upload artifact
       uses: actions/upload-artifact@master
       with:
-        name: linux-kernel-bzImage
+        name: linux-kernel-x86-bzImage
         path: arch/x86/boot/bzImage
