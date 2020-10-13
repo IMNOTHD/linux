@@ -2527,7 +2527,7 @@ dmar_search_domain_by_dev_info(int segment, int bus, int devfn)
 static int domain_setup_first_level(struct intel_iommu *iommu,
 				    struct dmar_domain *domain,
 				    struct device *dev,
-				    int pasid)
+				    u32 pasid)
 {
 	int flags = PASID_FLAG_SUPERVISOR_MODE;
 	struct dma_pte *pgd = domain->pgd;
@@ -2664,7 +2664,7 @@ static struct dmar_domain *dmar_insert_one_dev_info(struct intel_iommu *iommu,
 		}
 
 		/* Setup the PASID entry for requests without PASID: */
-		spin_lock(&iommu->lock);
+		spin_lock_irqsave(&iommu->lock, flags);
 		if (hw_pass_through && domain_type_is_si(domain))
 			ret = intel_pasid_setup_pass_through(iommu, domain,
 					dev, PASID_RID2PASID);
@@ -2674,7 +2674,7 @@ static struct dmar_domain *dmar_insert_one_dev_info(struct intel_iommu *iommu,
 		else
 			ret = intel_pasid_setup_second_level(iommu, domain,
 					dev, PASID_RID2PASID);
-		spin_unlock(&iommu->lock);
+		spin_unlock_irqrestore(&iommu->lock, flags);
 		if (ret) {
 			dev_err(dev, "Setup RID2PASID failed\n");
 			dmar_remove_one_dev_info(dev);
@@ -5173,7 +5173,7 @@ static int aux_domain_add_dev(struct dmar_domain *domain,
 		return -ENODEV;
 
 	if (domain->default_pasid <= 0) {
-		int pasid;
+		u32 pasid;
 
 		/* No private data needed for the default pasid */
 		pasid = ioasid_alloc(NULL, PASID_MIN,

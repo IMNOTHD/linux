@@ -2725,19 +2725,20 @@ EXPORT_SYMBOL(skb_checksum);
 /* Both of above in one bottle. */
 
 __wsum skb_copy_and_csum_bits(const struct sk_buff *skb, int offset,
-				    u8 *to, int len, __wsum csum)
+				    u8 *to, int len)
 {
 	int start = skb_headlen(skb);
 	int i, copy = start - offset;
 	struct sk_buff *frag_iter;
 	int pos = 0;
+	__wsum csum = 0;
 
 	/* Copy header. */
 	if (copy > 0) {
 		if (copy > len)
 			copy = len;
 		csum = csum_partial_copy_nocheck(skb->data + offset, to,
-						 copy, csum);
+						 copy);
 		if ((len -= copy) == 0)
 			return csum;
 		offset += copy;
@@ -2767,7 +2768,7 @@ __wsum skb_copy_and_csum_bits(const struct sk_buff *skb, int offset,
 				vaddr = kmap_atomic(p);
 				csum2 = csum_partial_copy_nocheck(vaddr + p_off,
 								  to + copied,
-								  p_len, 0);
+								  p_len);
 				kunmap_atomic(vaddr);
 				csum = csum_block_add(csum, csum2, pos);
 				pos += p_len;
@@ -2793,7 +2794,7 @@ __wsum skb_copy_and_csum_bits(const struct sk_buff *skb, int offset,
 				copy = len;
 			csum2 = skb_copy_and_csum_bits(frag_iter,
 						       offset - start,
-						       to, copy, 0);
+						       to, copy);
 			csum = csum_block_add(csum, csum2, pos);
 			if ((len -= copy) == 0)
 				return csum;
@@ -3013,7 +3014,7 @@ void skb_copy_and_csum_dev(const struct sk_buff *skb, u8 *to)
 	csum = 0;
 	if (csstart != skb->len)
 		csum = skb_copy_and_csum_bits(skb, csstart, to + csstart,
-					      skb->len - csstart, 0);
+					      skb->len - csstart);
 
 	if (skb->ip_summed == CHECKSUM_PARTIAL) {
 		long csstuff = csstart + skb->csum_offset;
@@ -3934,7 +3935,7 @@ normal:
 					skb_copy_and_csum_bits(head_skb, offset,
 							       skb_put(nskb,
 								       len),
-							       len, 0);
+							       len);
 				SKB_GSO_CB(nskb)->csum_start =
 					skb_headroom(nskb) + doffset;
 			} else {
@@ -5622,7 +5623,7 @@ int skb_mpls_push(struct sk_buff *skb, __be32 mpls_lse, __be16 mpls_proto,
 	lse->label_stack_entry = mpls_lse;
 	skb_postpush_rcsum(skb, lse, MPLS_HLEN);
 
-	if (ethernet)
+	if (ethernet && mac_len >= ETH_HLEN)
 		skb_mod_eth_type(skb, eth_hdr(skb), mpls_proto);
 	skb->protocol = mpls_proto;
 
@@ -5662,7 +5663,7 @@ int skb_mpls_pop(struct sk_buff *skb, __be16 next_proto, int mac_len,
 	skb_reset_mac_header(skb);
 	skb_set_network_header(skb, mac_len);
 
-	if (ethernet) {
+	if (ethernet && mac_len >= ETH_HLEN) {
 		struct ethhdr *hdr;
 
 		/* use mpls_hdr() to get ethertype to account for VLANs. */
